@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <!-- Viewport: Mobile First, No Zoom -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a5276">
+  <meta name="description" content="Aplikasi Absensi Guru SMP AN NAMIROH dengan foto wajah dan GPS">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Absensi Guru">
+  <meta name="application-name" content="Absensi Guru AN NAMIROH">
+  <meta name="msapplication-TileColor" content="#1a5276">
+  <meta name="format-detection" content="telephone=no">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Absensi Guru AN NAMIROH</title>
+</head>
+<body>
+
+<!-- ================================================================
+     TOAST CONTAINER
+     ================================================================ -->
+<div id="toast-container"></div>
+
+<!-- ================================================================
+     PAGE: LOGIN
+     ================================================================ -->
+<div id="page-login" class="page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">🏫</div>
+      <h1>ABSENSI GURU<br>AN NAMIROH</h1>
+      <p>SMP AN NAMIROH — Sistem Absensi Digital</p>
+    </div>
+
+    <div id="login-alert" class="alert" style="display:none"></div>
+
+    <form id="login-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="login-role">Masuk Sebagai</label>
+        <select class="form-control" id="login-role" required>
+          <option value="guru">👨‍🏫 Guru</option>
+          <option value="admin">🛡️ Administrator</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="login-username">Username</label>
+        <input type="text" class="form-control" id="login-username" placeholder="Masukkan username"
+               autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password</label>
+        <input type="password" class="form-control" id="login-password" placeholder="Masukkan password"
+               autocomplete="current-password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-login">
+        🔑 Masuk
+      </button>
+    </form>
+
+    <div class="text-center mt-2" style="font-size:0.78rem;color:var(--text-muted);">
+      <p>Demo: Guru → <strong>ahmad.fauzi</strong> / <strong>guru123</strong></p>
+      <p>Admin → <strong>admin</strong> / <strong>admin123</strong></p>
+    </div>
+
+    <div class="text-center mt-1" style="font-size:0.72rem;color:var(--text-muted);">
+      Memerlukan HTTPS untuk fitur kamera & GPS
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     PAGE: GURU
+     ================================================================ -->
+<div id="page-guru" class="page">
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="guru-sidebar-overlay" onclick="closeSidebar('guru-sidebar')"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="guru-sidebar" role="navigation" aria-label="Menu Guru">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🏫</div>
+      <div>
+        <div class="sidebar-title">AN NAMIROH</div>
+        <div class="sidebar-subtitle">Sistem Absensi Guru</div>
+      </div>
+      <button class="sidebar-close" onclick="closeSidebar('guru-sidebar')" aria-label="Tutup menu">✕</button>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-name" id="guru-sidebar-name"></div>
+      <div class="sidebar-user-role" id="guru-sidebar-role"></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Menu Utama</div>
+      <div class="nav-item" data-guru-nav="dashboard-guru" onclick="navigateGuru('dashboard-guru')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-guru-nav="absensi-guru" onclick="navigateGuru('absensi-guru')">
+        <span class="nav-icon">✅</span> Absensi
+      </div>
+      <div class="nav-item" data-guru-nav="izin-guru" onclick="navigateGuru('izin-guru')">
+        <span class="nav-icon">📋</span> Pengajuan Izin
+      </div>
+      <div class="nav-item" data-guru-nav="riwayat-guru" onclick="navigateGuru('riwayat-guru')">
+        <span class="nav-icon">📅</span> Riwayat Absensi
+      </div>
+      <div class="nav-item" data-guru-nav="profil-guru" onclick="navigateGuru('profil-guru')">
+        <span class="nav-icon">👤</span> Profil Saya
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-secondary btn-block" onclick="handleLogout()">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper">
+    <!-- Mobile Header -->
+    <header class="mobile-header" role="banner">
+      <button class="hamburger" onclick="openSidebar('guru-sidebar')" aria-label="Buka menu">☰</button>
+      <h2 id="guru-mobile-title">Dashboard</h2>
+      <button class="btn-icon" onclick="handleLogout()" aria-label="Keluar" title="Keluar">🚪</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- ===== DASHBOARD GURU ===== -->
+      <section id="dashboard-guru" class="section-view">
+        <div class="page-header">
+          <h2>📊 Dashboard</h2>
+          <p id="current-date">—</p>
+        </div>
+
+        <!-- Jam -->
+        <div class="absensi-status-bar">
+          <div>
+            <div class="status-time" id="current-time">00:00</div>
+            <div class="status-date">Waktu Saat Ini</div>
+          </div>
+          <button class="btn btn-accent" onclick="navigateGuru('absensi-guru')">📥 Absen Sekarang</button>
+        </div>
+
+        <!-- Status Hari Ini -->
+        <div id="guru-today-box"></div>
+
+        <!-- Statistik Bulan Ini -->
+        <div class="stats-grid">
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="guru-stat-hadir">0</div>
+            <div class="stat-label">Hadir Bulan Ini</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="guru-stat-izin">0</div>
+            <div class="stat-label">Izin</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value" id="guru-stat-alpha">0</div>
+            <div class="stat-label">Alpha</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-value" id="guru-stat-terlambat">0</div>
+            <div class="stat-label">Terlambat</div>
+          </div>
+        </div>
+
+        <!-- Riwayat Terbaru -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📅 Absensi Terbaru</span>
+            <button class="btn btn-sm btn-outline" onclick="navigateGuru('riwayat-guru')">Lihat Semua</button>
+          </div>
+          <div class="card-body">
+            <div id="guru-recent-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ABSENSI GURU ===== -->
+      <section id="absensi-guru" class="section-view">
+        <div class="page-header">
+          <h2>✅ Absensi</h2>
+          <p>Gunakan kamera dan GPS untuk absensi</p>
+        </div>
+
+        <!-- Info Jadwal -->
+        <div class="card mb-2">
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.875rem;">
+              <div>
+                <div class="text-muted">⏰ Jam Masuk</div>
+                <strong id="info-jam-masuk">06:30 – 08:00</strong>
+              </div>
+              <div>
+                <div class="text-muted">🔔 Jam Pulang</div>
+                <strong id="info-jam-pulang">15:30</strong>
+              </div>
+              <div>
+                <div class="text-muted">📍 Radius GPS</div>
+                <strong id="info-radius">200 meter</strong>
+              </div>
+              <div>
+                <div class="text-muted">📷 Foto Wajah</div>
+                <strong>Wajib</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Absensi -->
+        <div class="absensi-buttons">
+          <button class="absensi-btn masuk" id="btn-absensi-masuk" onclick="openAbsensiModal('masuk')">
+            <span class="ab-icon">📥</span>
+            <span>Absen Masuk</span>
+            <span style="font-size:0.8rem;font-weight:400;color:var(--text-muted)" id="absensi-masuk-status">Belum absen</span>
+          </button>
+          <button class="absensi-btn pulang" id="btn-absensi-pulang" onclick="openAbsensiModal('pulang')">
+            <span class="ab-icon">📤</span>
+            <span>Absen Pulang</span>
+            <span style="font-size:0.8rem;font-weight:400;color:var(--text-muted)" id="absensi-pulang-status">Belum absen</span>
+          </button>
+        </div>
+
+        <div class="alert alert-info">
+          <span>ℹ️</span>
+          <span>Pastikan GPS aktif dan izinkan akses kamera pada browser Anda. Aplikasi memerlukan HTTPS untuk fitur ini.</span>
+        </div>
+      </section>
+
+      <!-- ===== IZIN GURU ===== -->
+      <section id="izin-guru" class="section-view">
+        <div class="page-header">
+          <h2>📋 Pengajuan Izin</h2>
+          <p>Ajukan izin atau cuti kepada admin</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📝 Form Pengajuan</span></div>
+          <div class="card-body">
+            <div id="izin-alert" class="alert" style="display:none"></div>
+
+            <div class="form-group">
+              <label class="form-label">Jenis Izin</label>
+              <input type="hidden" id="input-izin-type">
+              <div class="izin-type-grid">
+                <div class="izin-type-btn" data-izin-type="Sakit" onclick="selectIzinType('Sakit')">🤒 Sakit</div>
+                <div class="izin-type-btn" data-izin-type="Izin Keluarga" onclick="selectIzinType('Izin Keluarga')">👨‍👩‍👧 Keluarga</div>
+                <div class="izin-type-btn" data-izin-type="Dinas Luar" onclick="selectIzinType('Dinas Luar')">🏢 Dinas</div>
+                <div class="izin-type-btn" data-izin-type="Cuti" onclick="selectIzinType('Cuti')">🏖️ Cuti</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="input-izin-tanggal">Tanggal Izin</label>
+              <input type="date" class="form-control" id="input-izin-tanggal">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="input-izin-keterangan">Keterangan</label>
+              <textarea class="form-control" id="input-izin-keterangan" placeholder="Jelaskan alasan izin..."></textarea>
+            </div>
+
+            <button class="btn btn-primary btn-block" onclick="submitIzin()">📤 Kirim Pengajuan</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📜 Riwayat Pengajuan</span></div>
+          <div class="card-body">
+            <div id="izin-riwayat-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RIWAYAT GURU ===== -->
+      <section id="riwayat-guru" class="section-view">
+        <div class="page-header">
+          <h2>📅 Riwayat Absensi</h2>
+          <p>Rekap absensi pribadi</p>
+        </div>
+
+        <div class="filter-bar">
+          <input type="month" class="form-control" id="filter-riwayat-bulan" onchange="renderRiwayatGuru()">
+          <button class="btn btn-primary" onclick="renderRiwayatGuru()">🔍 Filter</button>
+        </div>
+
+        <div id="riwayat-guru-list"></div>
+      </section>
+
+      <!-- ===== PROFIL GURU ===== -->
+      <section id="profil-guru" class="section-view">
+        <div class="page-header">
+          <h2>👤 Profil Saya</h2>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">Data Guru</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Nama Lengkap</div><div class="settings-row-desc" id="profil-nama">—</div></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">NIP</div><div class="settings-row-desc" id="profil-nip">—</div></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Mata Pelajaran</div><div class="settings-row-desc" id="profil-mapel">—</div></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Username</div><div class="settings-row-desc" id="profil-username">—</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔐 Ubah Password</span></div>
+          <div class="card-body">
+            <div id="profil-alert" class="alert" style="display:none"></div>
+            <div class="form-group">
+              <label class="form-label">Password Lama</label>
+              <input type="password" class="form-control" id="input-pw-lama" placeholder="Password saat ini">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password Baru</label>
+              <input type="password" class="form-control" id="input-pw-baru" placeholder="Min. 6 karakter">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Konfirmasi Password</label>
+              <input type="password" class="form-control" id="input-pw-konfirmasi" placeholder="Ulangi password baru">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="changePasswordGuru()">💾 Simpan Password</button>
+          </div>
+        </div>
+
+        <div class="text-center mt-2">
+          <button class="btn btn-secondary btn-block" onclick="handleLogout()">🚪 Keluar Akun</button>
+        </div>
+      </section>
+
+    </main><!-- end main-content -->
+  </div><!-- end content-wrapper -->
+
+  <!-- Bottom Nav (Mobile) -->
+  <nav class="bottom-nav" role="navigation" aria-label="Navigasi bawah">
+    <div class="bottom-nav-item" data-guru-nav="dashboard-guru" onclick="navigateGuru('dashboard-guru')">
+      <span class="nav-icon">📊</span>Dashboard
+    </div>
+    <div class="bottom-nav-item" data-guru-nav="absensi-guru" onclick="navigateGuru('absensi-guru')">
+      <span class="nav-icon">✅</span>Absensi
+    </div>
+    <div class="bottom-nav-item" data-guru-nav="izin-guru" onclick="navigateGuru('izin-guru')">
+      <span class="nav-icon">📋</span>Izin
+    </div>
+    <div class="bottom-nav-item" data-guru-nav="riwayat-guru" onclick="navigateGuru('riwayat-guru')">
+      <span class="nav-icon">📅</span>Riwayat
+    </div>
+    <div class="bottom-nav-item" data-guru-nav="profil-guru" onclick="navigateGuru('profil-guru')">
+      <span class="nav-icon">👤</span>Profil
+    </div>
+  </nav>
+
+</div><!-- end page-guru -->
+
+
+<!-- ================================================================
+     PAGE: ADMIN
+     ================================================================ -->
+<div id="page-admin" class="page">
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="admin-sidebar-overlay" onclick="closeSidebar('admin-sidebar')"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="admin-sidebar" role="navigation" aria-label="Menu Admin">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🛡️</div>
+      <div>
+        <div class="sidebar-title">AN NAMIROH</div>
+        <div class="sidebar-subtitle">Panel Administrator</div>
+      </div>
+      <button class="sidebar-close" onclick="closeSidebar('admin-sidebar')" aria-label="Tutup menu">✕</button>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-name" id="admin-sidebar-name">Administrator</div>
+      <div class="sidebar-user-role">Admin Sistem</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Admin Panel</div>
+      <div class="nav-item" data-admin-nav="dashboard-admin" onclick="navigateAdmin('dashboard-admin')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-admin-nav="admin-guru" onclick="navigateAdmin('admin-guru')">
+        <span class="nav-icon">👨‍🏫</span> Daftar Guru
+      </div>
+      <div class="nav-item" data-admin-nav="admin-absensi" onclick="navigateAdmin('admin-absensi')">
+        <span class="nav-icon">✅</span> Rekap Absensi
+      </div>
+      <div class="nav-item" data-admin-nav="admin-izin" onclick="navigateAdmin('admin-izin')">
+        <span class="nav-icon">📋</span> Pengajuan Izin
+      </div>
+      <div class="nav-item" data-admin-nav="admin-laporan" onclick="navigateAdmin('admin-laporan')">
+        <span class="nav-icon">📈</span> Laporan & Ekspor
+      </div>
+      <div class="nav-item" data-admin-nav="admin-pengaturan" onclick="navigateAdmin('admin-pengaturan')">
+        <span class="nav-icon">⚙️</span> Pengaturan
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-secondary btn-block" onclick="handleLogout()">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper">
+    <!-- Mobile Header -->
+    <header class="mobile-header" role="banner">
+      <button class="hamburger" onclick="openSidebar('admin-sidebar')" aria-label="Buka menu">☰</button>
+      <h2 id="admin-mobile-title">Dashboard</h2>
+      <button class="btn-icon" onclick="handleLogout()" aria-label="Keluar" title="Keluar">🚪</button>
+    </header>
+
+    <main class="main-content">
+
+      <!-- ===== DASHBOARD ADMIN ===== -->
+      <section id="dashboard-admin" class="section-view">
+        <div class="page-header">
+          <h2>📊 Dashboard Admin</h2>
+          <p>Rekap absensi hari ini — SMP AN NAMIROH</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card blue">
+            <div class="stat-icon">👨‍🏫</div>
+            <div class="stat-value" id="admin-stat-guru">0</div>
+            <div class="stat-label">Total Guru</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="admin-stat-hadir-today">0</div>
+            <div class="stat-label">Hadir Hari Ini</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="admin-stat-izin-today">0</div>
+            <div class="stat-label">Izin Hari Ini</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value" id="admin-stat-alpha-today">0</div>
+            <div class="stat-label">Tidak Hadir</div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">📈 Kehadiran 6 Bulan Terakhir</span></div>
+          <div class="card-body">
+            <div class="chart-container">
+              <div class="bar-chart" id="admin-bar-chart"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Absensi Hari Ini -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📋 Absensi Hari Ini</span>
+            <button class="btn btn-sm btn-primary" onclick="exportExcel('today')">⬇️ Ekspor</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <!-- Desktop Table -->
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Nama Guru</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr>
+                </thead>
+                <tbody id="today-absensi-tbody"></tbody>
+              </table>
+            </div>
+            <!-- Mobile Cards -->
+            <div class="card-table" id="today-absensi-cards" style="padding:0.75rem"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== DAFTAR GURU ===== -->
+      <section id="admin-guru" class="section-view">
+        <div class="page-header">
+          <h2>👨‍🏫 Daftar Guru</h2>
+          <p>Kelola data guru</p>
+        </div>
+
+        <div style="margin-bottom:1rem">
+          <button class="btn btn-primary" onclick="addGuruNew()">➕ Tambah Guru</button>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <!-- Desktop -->
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Nama</th><th>NIP</th><th>Mata Pelajaran</th><th>Username</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="guru-list-tbody"></tbody>
+              </table>
+            </div>
+            <!-- Mobile -->
+            <div class="card-table" id="guru-list-cards" style="padding:0.75rem"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== REKAP ABSENSI ===== -->
+      <section id="admin-absensi" class="section-view">
+        <div class="page-header">
+          <h2>✅ Rekap Absensi</h2>
+          <p>Data absensi seluruh guru</p>
+        </div>
+
+        <div class="filter-bar">
+          <input type="date" class="form-control" id="filter-absensi-tgl" onchange="renderAdminAbsensi()">
+          <select class="form-control" id="filter-absensi-status" onchange="renderAdminAbsensi()">
+            <option value="">Semua Status</option>
+            <option value="hadir">Hadir</option>
+            <option value="terlambat">Terlambat</option>
+            <option value="izin">Izin</option>
+            <option value="alpha">Alpha</option>
+          </select>
+          <button class="btn btn-primary" onclick="renderAdminAbsensi()">🔍</button>
+          <button class="btn btn-success" onclick="exportExcel('all')">⬇️ Excel</button>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <!-- Desktop -->
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Tanggal</th><th>Nama Guru</th><th>Masuk</th><th>Pulang</th><th>Status</th><th>Lokasi</th></tr>
+                </thead>
+                <tbody id="admin-absensi-tbody"></tbody>
+              </table>
+            </div>
+            <!-- Mobile -->
+            <div class="card-table" id="admin-absensi-cards" style="padding:0.75rem"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PENGAJUAN IZIN ===== -->
+      <section id="admin-izin" class="section-view">
+        <div class="page-header">
+          <h2>📋 Pengajuan Izin</h2>
+          <p>Setujui atau tolak pengajuan izin guru</p>
+        </div>
+
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <!-- Desktop -->
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Guru</th><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="admin-izin-tbody"></tbody>
+              </table>
+            </div>
+            <!-- Mobile -->
+            <div class="card-table" id="admin-izin-cards" style="padding:0.75rem"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== LAPORAN & EKSPOR ===== -->
+      <section id="admin-laporan" class="section-view">
+        <div class="page-header">
+          <h2>📈 Laporan & Ekspor</h2>
+          <p>Unduh laporan absensi dalam format Excel / PDF</p>
+        </div>
+
+        <!-- Statistik Bulan Ini -->
+        <div class="stats-grid" style="margin-bottom:1.25rem">
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="laporan-total-hadir">0</div>
+            <div class="stat-label">Hadir Bulan Ini</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="laporan-total-izin">0</div>
+            <div class="stat-label">Izin</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value" id="laporan-total-alpha">0</div>
+            <div class="stat-label">Alpha</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-value" id="laporan-total-terlambat">0</div>
+            <div class="stat-label">Terlambat</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">⬇️ Unduh Laporan</span></div>
+          <div class="card-body">
+            <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1rem">
+              File CSV dapat dibuka langsung di Microsoft Excel. Pilih rentang waktu laporan:
+            </p>
+            <div class="export-options">
+              <button class="btn btn-success" onclick="exportExcel('today')">
+                📅 Excel Hari Ini
+              </button>
+              <button class="btn btn-success" onclick="exportExcel('month')">
+                📆 Excel Bulan Ini
+              </button>
+              <button class="btn btn-success" onclick="exportExcel('all')">
+                📊 Excel Semua Data
+              </button>
+              <button class="btn btn-primary" onclick="exportPDF()">
+                🖨️ Cetak / PDF
+              </button>
+            </div>
+
+            <div class="alert alert-info mt-2">
+              <span>ℹ️</span>
+              <span>File CSV dapat langsung dibuka di Microsoft Excel. Jika karakter tampil aneh, pilih encoding UTF-8 saat membuka file.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PENGATURAN ===== -->
+      <section id="admin-pengaturan" class="section-view">
+        <div class="page-header">
+          <h2>⚙️ Pengaturan Sistem</h2>
+          <p>Konfigurasi jadwal, GPS, dan kebijakan absensi</p>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">Informasi Sekolah</div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Nama Sekolah</div>
+              <input type="text" class="form-control mt-1" id="set-nama-sekolah" value="SMP AN NAMIROH">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">Lokasi & GPS</div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Koordinat Sekolah</div>
+              <div class="settings-row-desc">Latitude & Longitude lokasi sekolah</div>
+              <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap">
+                <input type="number" class="form-control" id="set-lat" placeholder="Latitude" step="0.000001" style="flex:1;min-width:120px">
+                <input type="number" class="form-control" id="set-lng" placeholder="Longitude" step="0.000001" style="flex:1;min-width:120px">
+              </div>
+              <button class="btn btn-outline btn-sm mt-1" onclick="getLocationForAdmin()">📍 Gunakan Lokasi Saat Ini</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Radius GPS (meter)</div>
+              <input type="number" class="form-control mt-1" id="set-radius" value="200" min="50" max="2000">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-label">Wajib GPS</div>
+            <label class="toggle">
+              <input type="checkbox" id="set-wajib-gps" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">Jadwal Absensi</div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Jam Masuk Mulai</div>
+              <input type="time" class="form-control mt-1" id="set-jam-masuk-mulai" value="06:30">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Jam Masuk Selesai (Batas)</div>
+              <input type="time" class="form-control mt-1" id="set-jam-masuk-selesai" value="08:00">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Toleransi Keterlambatan (menit)</div>
+              <input type="number" class="form-control mt-1" id="set-toleransi" value="15" min="0" max="60">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="flex:1">
+              <div class="settings-row-label">Jam Pulang</div>
+              <input type="time" class="form-control mt-1" id="set-jam-pulang" value="15:30">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">Kebijakan Absensi</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Wajib Foto Wajah</div><div class="settings-row-desc">Guru harus mengambil foto saat absensi</div></div>
+            <label class="toggle">
+              <input type="checkbox" id="set-wajib-foto" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" onclick="saveAdminSettings()">💾 Simpan Pengaturan</button>
+      </section>
+
+    </main>
+  </div><!-- end content-wrapper -->
+</div><!-- end page-admin -->
+
+
+<!-- ================================================================
+     MODAL: ABSENSI (Kamera + GPS)
+     ================================================================ -->
+<div id="modal-absensi" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-absensi-title">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-absensi-title">📥 Absensi Masuk</span>
+      <button class="btn-icon" onclick="closeAbsensiModal()" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div id="absensi-modal-alert" class="alert" style="display:none"></div>
+
+      <!-- === KAMERA === -->
+      <div class="card-title mb-1">📷 Foto Wajah</div>
+      <div class="camera-status wait" id="camera-status-text">⏳ Memulai kamera...</div>
+
+      <div class="camera-container">
+        <video id="camera-video" playsinline autoplay muted></video>
+        <canvas id="camera-canvas"></canvas>
+        <img id="camera-preview" alt="Foto wajah">
+        <div class="camera-overlay" id="camera-overlay">
+          <div class="spinner" style="border-top-color:#fff;width:28px;height:28px;border-width:3px;"></div>
+          <p>Memulai kamera...</p>
+        </div>
+        <div class="camera-guide"></div>
+      </div>
+
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+        <button class="btn btn-primary" id="btn-capture" onclick="capturePhoto()" style="display:none;flex:1">
+          📸 Ambil Foto
+        </button>
+        <button class="btn btn-secondary" id="btn-retake" onclick="retakePhoto()" style="display:none;flex:1">
+          🔄 Ulangi Foto
+        </button>
+      </div>
+
+      <!-- === GPS === -->
+      <div class="card-title mb-1">📍 Lokasi GPS</div>
+      <div id="gps-status-box" class="gps-status-box loading">
+        <span class="gps-icon">📡</span>
+        <div>
+          <div class="gps-label">Mendapatkan lokasi...</div>
+          <div class="gps-detail">Pastikan GPS aktif di perangkat Anda.</div>
+        </div>
+      </div>
+
+      <div class="distance-bar">
+        <div class="distance-fill" id="distance-fill" style="width:0%;background:#ccc"></div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">
+        Jarak dari sekolah (semakin kiri = semakin dekat)
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAbsensiModal()">Batal</button>
+      <button class="btn btn-primary" id="btn-submit-absensi" onclick="submitAbsensi()">Absen Masuk</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ================================================================
+     MODAL: EDIT GURU
+     ================================================================ -->
+<div id="modal-edit-guru" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-guru-title">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-edit-guru-title">✏️ Data Guru</span>
+      <button class="btn-icon" onclick="el('modal-edit-guru').classList.remove('show')" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-guru-id">
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap</label>
+        <input type="text" class="form-control" id="edit-guru-nama" placeholder="Nama dan gelar">
+      </div>
+      <div class="form-group">
+        <label class="form-label">NIP</label>
+        <input type="text" class="form-control" id="edit-guru-nip" placeholder="Nomor Induk Pegawai" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mata Pelajaran</label>
+        <input type="text" class="form-control" id="edit-guru-mapel" placeholder="Contoh: Matematika">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" id="edit-guru-username" placeholder="Username login" autocapitalize="none">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password <small class="text-muted">(kosongkan jika tidak diubah)</small></label>
+        <input type="password" class="form-control" id="edit-guru-password" placeholder="Password baru">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="el('modal-edit-guru').classList.remove('show')">Batal</button>
+      <button class="btn btn-primary" onclick="saveGuruForm()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ================================================================
+     PWA INSTALL BANNER
+     ================================================================ -->
+<div id="install-banner" class="hidden">
+  <span style="font-size:1.5rem">📱</span>
+  <div class="install-text">
+    <strong>Pasang Aplikasi</strong>
+    Install Absensi Guru di layar utama
+  </div>
+  <button class="btn btn-accent btn-sm" onclick="installApp()">Pasang</button>
+  <button class="btn-icon" onclick="el('install-banner').classList.add('hidden')" style="color:rgba(255,255,255,0.7)">✕</button>
+</div>
+
+
+<!-- ================================================================
+     PRINT STYLES (PDF)
+     ================================================================ -->
+<style>
+@media print {
+  .sidebar, .mobile-header, .bottom-nav, .btn, .filter-bar,
+  #install-banner, #toast-container, .modal-overlay { display: none !important; }
+  .main-content { margin: 0 !important; padding: 1rem !important; }
+  .page { display: block !important; }
+  #page-login, #page-guru { display: none !important; }
+  #page-admin { display: block !important; }
+  .table-wrapper { display: block !important; overflow: visible !important; }
+  .card-table { display: none !important; }
+  table { font-size: 11pt; }
+  th, td { padding: 6px 8px; }
+  @page { margin: 1cm; }
+}
+</style>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

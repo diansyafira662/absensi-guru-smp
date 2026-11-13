@@ -1,0 +1,29 @@
+{
+  "name": "ABSENSI GURU AN NAMIROH",
+  "short_name": "Absensi Guru",
+  "description": "Aplikasi Absensi Guru SMP An Namiroh dengan foto wajah dan GPS",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a5276",
+  "theme_color": "#1a5276",
+  "lang": "id",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

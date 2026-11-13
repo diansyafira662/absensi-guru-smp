@@ -1,0 +1,17 @@
+{
+  "name": "absensi-guru-an-namiroh",
+  "version": "1.0.0",
+  "description": "Aplikasi Absensi Guru SMP AN NAMIROH - Multi-Device PWA",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
